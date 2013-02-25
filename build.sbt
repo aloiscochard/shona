@@ -6,7 +6,9 @@ scalaVersion := "2.10.0-RC1"
 
 libraryDependencies ++= Seq(
   "org.specs2" %% "specs2" % "1.14" % "test",
-  "org.json4s" %% "json4s-native" % "3.1.0"
+  "org.json4s" %% "json4s-native" % "3.1.0",
+  "com.typesafe.slick" %% "slick" % "1.0.0",
+  "com.h2database" % "h2" % "1.3.166"
 )
 
 resolvers ++= Seq(
