@@ -3,22 +3,22 @@ package relational
 
 import Graph._
 
-// TODO Support ManyToMany relation
+// TODO Support ManyToMany relationship
 
 trait Model {
   trait Entity extends Graph.Entity {
     import Connection._
-    import Relation._
+    import Relationship._
 
-    override lazy val connections = relationship.collect {
+    override lazy val connections = relationships.collect {
       case r if r.sourceEntity == this || r.targetEntity == this => connection(this, r)
     }
   }
 
   object Entity { def apply(n: String, ps: Seq[Graph.Property]) = new Entity { val name = n; val properties = ps } }
 
-  trait Relation {
-    def tpe: Relation.Type
+  trait Relationship {
+    def tpe: Relationship.Type
     def sourceConnection: String
     def sourceEntity: Entity
     def sourceProperty: Property
@@ -27,13 +27,13 @@ trait Model {
     def targetProperty: Property
   }
 
-  object Relation {
+  object Relationship {
     sealed trait Type
     //case object ManyToMany extends Type
     case object OneToMany extends Type
     case object OneToOne extends Type
 
-    def apply(t: Type, sc: String, se: Entity, sp: Property, tc: String, te: Entity, tp: Property) = new Relation { 
+    def apply(t: Type, sc: String, se: Entity, sp: Property, tc: String, te: Entity, tp: Property) = new Relationship { 
       val tpe = t
       val sourceConnection = sc; val sourceEntity = se; val sourceProperty = sp;
       val targetConnection = tc; val targetEntity = te; val targetProperty = tp
@@ -45,32 +45,32 @@ trait Model {
 
     def target = targetEntity
     def direction: Direction
-    def relation: Relation
+    def relationship: Relationship
 
     // TODO Refactor for easier swapping (encapsulate connection/property/entity in a datastructure)
     def name = direction match { 
-      case SourceToTarget => relation.sourceConnection
-      case TargetToSource => relation.targetConnection
+      case SourceToTarget => relationship.sourceConnection
+      case TargetToSource => relationship.targetConnection
     }
 
-    def tpe: Connection.Type = (direction, relation.tpe) match {
-      case (SourceToTarget, Relation.OneToMany) => ToMany
+    def tpe: Connection.Type = (direction, relationship.tpe) match {
+      case (SourceToTarget, Relationship.OneToMany) => ToMany
       case _ => ToOne
     }
 
     def sourceProperty = direction match { 
-      case SourceToTarget => relation.sourceProperty
-      case TargetToSource => relation.targetProperty
+      case SourceToTarget => relationship.sourceProperty
+      case TargetToSource => relationship.targetProperty
     }
 
     def targetEntity = direction match { 
-      case SourceToTarget => relation.targetEntity
-      case TargetToSource => relation.sourceEntity
+      case SourceToTarget => relationship.targetEntity
+      case TargetToSource => relationship.sourceEntity
     }
 
     def targetProperty = direction match { 
-      case SourceToTarget => relation.targetProperty
-      case TargetToSource => relation.sourceProperty
+      case SourceToTarget => relationship.targetProperty
+      case TargetToSource => relationship.sourceProperty
     }
   }
 
@@ -90,12 +90,12 @@ trait Model {
   }
 
 
-  def relationship: Seq[Relation]
+  def relationships: Seq[Relationship]
 
-  def connection(e: Entity, r: Relation) = 
+  def connection(e: Entity, r: Relationship) = 
     new Connection { 
       val direction = if (r.sourceEntity == e) Connection.SourceToTarget else Connection.TargetToSource
-      val relation = r
+      val relationship = r
     } 
 }
 
@@ -146,10 +146,10 @@ abstract class EntityLoader[M <: Model](model: M) {
       case View(fields) => fields.map({ case segment :: tail => segment }).flatMap(_properties(_))
       case Element(property: Property) => property :: Nil
       case Element(connection: M#Connection) => 
-        if (connection.relation.sourceEntity == entity) 
-          connection.relation.sourceProperty :: Nil
+        if (connection.relationship.sourceEntity == entity) 
+          connection.relationship.sourceProperty :: Nil
         else
-          connection.relation.targetProperty :: Nil
+          connection.relationship.targetProperty :: Nil
       case _ => Nil
     }
     _properties(segment)

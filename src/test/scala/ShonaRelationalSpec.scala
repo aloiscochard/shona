@@ -56,7 +56,7 @@ class ShonaRelationalSpec extends Specification {
 }
 
 object SocialModel extends Model {
-  import Relation._
+  import Relationship._
 
   val id = Property("id")
   val personId = Property("person_id")
@@ -66,9 +66,9 @@ object SocialModel extends Model {
   val album = Entity("album", Seq(id, personId, Property("name")))
   val photo = Entity("photo", Seq(id, albumId, Property("name")))
 
-  val relationship = Seq(
-    Relation(OneToMany, "albums", person, id, "person", album, personId),
-    Relation(OneToMany, "photos", album, id, "album", photo, albumId)
+  val relationships = Seq(
+    Relationship(OneToMany, "albums", person, id, "person", album, personId),
+    Relationship(OneToMany, "photos", album, id, "album", photo, albumId)
   )
 }
 
