@@ -53,6 +53,7 @@ class ShonaRelationalSpec extends Specification {
       true === true
     }
   }
+
 }
 
 object SocialModel extends Model {

@@ -4,7 +4,10 @@ package slick
 
 import PartialFunction._
 import scala.slick.lifted.AbstractTable
+import scala.slick.lifted.Column
 import scala.slick.ast._
+
+import com.google.common.base.CaseFormat._
 
 import Graph._
 
@@ -14,14 +17,20 @@ trait ManagedSchema {
     def relationships = managedTables.flatMap(_.relationships)
   }
 
-  def managedTables: Seq[ManagedTable]
-  
+  case class ManagedColumn(columnName: String, propertyName: String) extends Property {
+    def name = propertyName
+  }
+
+  object ManagedColumn {
+    def apply(columnName: String): ManagedColumn = ManagedColumn(columnName, format(ManagedSchema.Column, columnName))
+  }
+
   trait ManagedTable { self: AbstractTable[_] =>
     import ManagedModel._
 
     val entity = new Entity {
-      def name = self.tableName
-      def properties = self.create_*.map(_.name).map(Property(_)).to[Seq]
+      def name = format(ManagedSchema.Table, self.tableName)
+      def properties = self.create_*.map(_.name).map(ManagedColumn(_)).to[Seq]
     }
 
     // TODO Find solution to name properties/connections
@@ -31,17 +40,17 @@ trait ManagedSchema {
         condOpt {
           (
             fk.targetTable,
-            fk.linearizedSourceColumns.collectFirst { case Select(_, x) => Property(x.name) },
-            fk.linearizedTargetColumns.collectFirst { case Select(_, x) => Property(x.name) }
+            fk.linearizedSourceColumns.collectFirst { case Select(_, x) => ManagedColumn(x.name) },
+            fk.linearizedTargetColumns.collectFirst { case Select(_, x) => ManagedColumn(x.name) }
           )
         } {
           case (tt: ManagedTable, Some(sourceProperty), Some(targetProperty)) => 
             Relationship(
               Relationship.OneToMany,
-              tt.entity.name,
+              format(ManagedSchema.ConnectionToOne, tt.entity.name),
               entity, 
               sourceProperty,
-              entity.name,
+              format(ManagedSchema.ConnectionToMany, entity.name),
               tt.entity,
               targetProperty
             )
@@ -49,4 +58,21 @@ trait ManagedSchema {
       }
   }
 
+  def managedTables: Seq[ManagedTable]
+
+  def formatter: PartialFunction[(ManagedSchema.Type, String), String] = {
+    case (ManagedSchema.ConnectionToMany, label) => label
+    case (ManagedSchema.ConnectionToOne, label) => label.dropRight(1)
+    case (_, label) => UPPER_UNDERSCORE.to(LOWER_CAMEL, label)
+  }
+
+  private def format(tpe: ManagedSchema.Type, label: String) = formatter.lift(tpe -> label).getOrElse(label)
+}
+
+object ManagedSchema {
+  sealed trait Type
+  case object Column extends Type
+  case object Table extends Type
+  case object ConnectionToMany extends Type
+  case object ConnectionToOne extends Type
 }

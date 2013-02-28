@@ -27,7 +27,7 @@ class ShonaJsonSpec extends Specification {
 
   "ShonaJson" should {
     "extract expression" in {
-      def extract(expression: String) = Expression(expression).right.toOption.flatMap(Json(json))
+      def extract(expression: String) = Expression(expression).right.toOption.flatMap(Json.extract(json))
 
       extract("name") === Some(JString("Alois"))
       extract("contact.skype") === Some(JString("alois.cochard"))
