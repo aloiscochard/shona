@@ -9,7 +9,7 @@ package query {
     case class Apply(tree: Tree, operation: Operation) extends Tree
 
     sealed trait Operation
-    case class Map(mappings: Seq[Mapping]) extends Operation
+    case class MapOperation(mappings: Seq[Mapping]) extends Operation
 
     sealed trait Mapping { def tree: Tree }
     object Mapping {
@@ -46,7 +46,7 @@ package query {
       case x :: xs => tree => xs.foldLeft(Apply(tree, x))(Apply(_, _)) 
     })
 
-    def operation: Parser[Operation] = "[" ~> ("=" ~> mappings).map(Map(_)) <~ "]"
+    def operation: Parser[Operation] = "[" ~> ("=" ~> mappings).map(MapOperation(_)) <~ "]"
 
     def mappings: Parser[Seq[Mapping]] = ("{" ~> rep1sep(mapping, ",") <~ "}") | mapping.map(_ :: Nil)
 
