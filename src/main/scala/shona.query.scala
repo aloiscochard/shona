@@ -6,7 +6,7 @@ package query {
     sealed trait Tree
     case class Property(name: String) extends Tree
     case class Select(qualifier: Tree, field: Property) extends Tree
-    case class Apply(tree: Tree, operations: Seq[Operation]) extends Tree
+    case class Apply(tree: Tree, operation: Operation) extends Tree
 
     sealed trait Operation
     case class Map(mappings: Seq[Mapping]) extends Operation
@@ -32,19 +32,21 @@ package query {
       case NoSuccess(message, _) => Left(message)
     }
 
-    def expression: Parser[Tree] = select | operations.map(Apply(Root, _))
+    def expression: Parser[Tree] = select | operations.map(_(Root))
 
     def select: Parser[Tree] = (rep1sep(property, ".") ~ operations.?).map {
       case (x :: xs) ~ operations => 
         val tree = xs.foldLeft(Select(Root, x))(Select(_, _))
-        operations.fold[Tree](tree)(Apply(tree, _))
+        operations.fold[Tree](tree)(_(tree))
     }
 
     def property: Parser[Property] = """\w+""".r.map(Property(_))
 
-    def operations: Parser[Seq[Operation]] = ("[" ~> rep1sep(operation, ",") <~ "]")
+    def operations: Parser[Tree => Tree] = rep1(operation).map(xs => (xs: @unchecked) match {
+      case x :: xs => tree => xs.foldLeft(Apply(tree, x))(Apply(_, _)) 
+    })
 
-    def operation: Parser[Operation] = ("=" ~> mappings).map(Map(_))
+    def operation: Parser[Operation] = "[" ~> ("=" ~> mappings).map(Map(_)) <~ "]"
 
     def mappings: Parser[Seq[Mapping]] = ("{" ~> rep1sep(mapping, ",") <~ "}") | mapping.map(_ :: Nil)
 
