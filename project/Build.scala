@@ -36,7 +36,10 @@ object ShonaBuild extends Build {
     "shona-core",
     file("shona-core"),
     settings = buildSettings ++ testDependencies ++ Seq(
-      libraryDependencies <+= (scalaVersion)("org.scala-lang.macro-paradise" % "scala-reflect" % _)
+      libraryDependencies <+= (scalaVersion)("org.scala-lang.macro-paradise" % "scala-reflect" % _),
+      libraryDependencies ++= Seq(
+        "com.chuusai" % "shapeless" % "1.2.5-SNAPSHOT" cross CrossVersion.full
+      )
     )
   )
 
