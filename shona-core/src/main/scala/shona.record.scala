@@ -1,3 +1,9 @@
+//  __..                                                                                   Copyright (c) 2013, Alois Cochard
+// (__ |_  _ ._  _.
+// .__)[ )(_)[ )(_]
+//
+// Licensed under the Apache License, Version 2.0
+
 package shona
 
 package record {
