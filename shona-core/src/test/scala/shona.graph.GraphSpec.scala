@@ -10,25 +10,26 @@ package graph
 import org.specs2.mutable._
 
 import record._
+import Property._
 
 class GraphSpec extends Specification {
 
   val venueV = Vertex[label("venue")] ~ (
-    Property.Int[label("id")], 
-    Property.String[label("name")]
+    int   [label("id")], 
+    string[label("name")]
   )
 
   val addressV = Vertex[label("address")] ~ (
-    Property.Int[label("venueId")],
-    Property.String[label("street")], 
-    Property.String[label("city")]
+    int   [label("venueId")], 
+    string[label("street")], 
+    string[label("city")]
   )
 
   val reviewV = Vertex[label("review")] ~ (
-    Property.String[label("id")], 
-    Property.String[label("venueId")], 
-    Property.String[label("rating")],
-    Property.String[label("comment")]
+    int   [label("id")], 
+    string[label("venueId")], 
+    string[label("rating")], 
+    string[label("comment")]
   )
 
   val graph = Graph(venueV, addressV, reviewV)(

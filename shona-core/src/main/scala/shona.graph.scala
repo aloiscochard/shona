@@ -58,18 +58,18 @@ package graph {
     final def apply[N <: String]()(implicit label: Label[N]) = new EdgeBuilder(label)
   }
 
-  sealed abstract class Property[N <: String, T](override val label: Label[N]) extends Record[N, T]
+  class Property[N <: String, T](override val label: Label[N]) extends Record[N, T]
   object Property {
-    case class Boolean[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Boolean](label)
-    case class Byte[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Byte](label)
-    case class Bytes[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, Array[scala.Byte]](label)
-    case class Char[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, Array[scala.Char]](label)
-    case class Double[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Double](label)
-    case class Float[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Float](label)
-    case class Int[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Int](label)
-    case class Long[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Long](label)
-    case class Short[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, scala.Short](label)
-    case class String[N <: java.lang.String](implicit override val label: Label[N]) extends Property[N, java.lang.String](label)
+    def boolean[N <: String]()(implicit label: Label[N]) = new Property[N, Boolean](label)
+    def byte[N <: String]()(implicit label: Label[N]) = new Property[N, Byte](label)
+    def bytes[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Byte]](label)
+    def char[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Char]](label)
+    def double[N <: String]()(implicit label: Label[N]) = new Property[N, Double](label)
+    def float[N <: String]()(implicit label: Label[N]) = new Property[N, Float](label)
+    def int[N <: String]()(implicit label: Label[N]) = new Property[N, Int](label)
+    def long[N <: String]()(implicit label: Label[N]) = new Property[N, Long](label)
+    def short[N <: String]()(implicit label: Label[N]) = new Property[N, Short](label)
+    def string[N <: String]()(implicit label: Label[N]) = new Property[N, String](label)
   }
 
   class Vertex[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](
