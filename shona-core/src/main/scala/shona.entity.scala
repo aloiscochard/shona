@@ -49,7 +49,9 @@ package entity {
 
       if (c.typeCheck(q"new shona.entity.views.$name(${entity.tree})", silent = true) == EmptyTree) {
         c.introduceTopLevel("shona.entity.views",
-          enrich(q"class $name(val entity: ${TypeTree(entityType)})", fields.zipWithIndex.map { case ((label, tpe), index) =>
+          enrich(
+            q"""class $name(val entity: ${TypeTree(entityType)}) { override def toString = "View." + entity.toString }""",
+            fields.zipWithIndex.map { case ((label, tpe), index) =>
             val body = Select(HList.select(index)(Select(Ident(TermName("entity")), TermName("fields"))), TermName("value"))
             q"def ${TermName(label)}: ${TypeTree(tpe)} = $body"
           })
