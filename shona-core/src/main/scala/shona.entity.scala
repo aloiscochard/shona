@@ -44,21 +44,14 @@ package entity {
 
       val entityType = c.weakTypeOf[E]
 
-      val fields = {
-        val TypeRef(_, _, List(fieldsHList)) = entityType
-        HList.decons(fieldsHList).map { x => 
-          val TypeRef(_, _, List(Label(label), tpe)) = x
-          TermName(label) -> TypeTree(tpe)
-        }
-      }
-
+      val Entity(fields) = entityType
       val name = TypeName("View" + digest(fields.toString))
 
       if (c.typeCheck(q"new shona.entity.views.$name(${entity.tree})", silent = true) == EmptyTree) {
         c.introduceTopLevel("shona.entity.views",
           enrich(q"class $name(val entity: ${TypeTree(entityType)})", fields.zipWithIndex.map { case ((label, tpe), index) =>
             val body = Select(HList.select(index)(Select(Ident(TermName("entity")), TermName("fields"))), TermName("value"))
-            q"def ${label}: ${tpe} = $body"
+            q"def ${TermName(label)}: ${TypeTree(tpe)} = $body"
           })
         )
       }

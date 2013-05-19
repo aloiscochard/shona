@@ -13,9 +13,15 @@ trait MacroHelper extends Macro {
   import c._
   import c.universe._
 
-  def withLabel(tpe: Type) = {
-    val TypeRef(_, _, Label(label) :: _) = tpe
-    label -> tpe
+  object Entity {
+    def unapply(tpe: Type) = {
+      val TypeRef(_, _, List(fieldsHList)) = tpe
+      val fields = HList.decons(fieldsHList).map { x =>
+        val TypeRef(_, _, List(Label(label), tpe)) = x
+        label -> tpe
+      }
+      Some(fields)
+    }
   }
 
   object Graph {
@@ -54,5 +60,10 @@ trait MacroHelper extends Macro {
   def enrich(tree: Tree, generatedCode: List[c.Tree]) = {
     val ClassDef(a, b, c, Template(parents, valDef, existingCode)) = tree
     ClassDef(a, b, c, Template(parents, valDef, existingCode ++ generatedCode))
+  }
+
+  def withLabel(tpe: Type) = {
+    val TypeRef(_, _, Label(label) :: _) = tpe
+    label -> tpe
   }
 }
