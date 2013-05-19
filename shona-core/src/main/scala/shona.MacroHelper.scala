@@ -13,10 +13,18 @@ trait MacroHelper extends Macro {
   import c._
   import c.universe._
 
-  object Label {
+  def withLabel(tpe: Type) = {
+    val TypeRef(_, _, Label(label) :: _) = tpe
+    label -> tpe
+  }
+
+  object Graph {
     def unapply(tpe: Type) = {
-      val ConstantType(Constant(id: String)) = tpe
-      Some(id)
+      val TypeRef(_, _, xs) = tpe
+      val List(verticesHList, edgesHList) = xs
+      val vertices = HList.decons(verticesHList).map(withLabel)
+      val edges = HList.decons(edgesHList).map(withLabel)
+      Some(vertices -> edges)
     }
   }
 
@@ -29,6 +37,13 @@ trait MacroHelper extends Macro {
     def select(i: Int): Tree => Tree = tree => i match {
       case 0 => Select(tree, "head")
       case i => select(i - 1)(Select(tree, "tail"))
+    }
+  }
+
+  object Label {
+    def unapply(tpe: Type) = {
+      val ConstantType(Constant(id: String)) = tpe
+      Some(id)
     }
   }
 
