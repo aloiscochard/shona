@@ -25,7 +25,7 @@ abstract class EntityLoader[N <: String, Properties <: HList : <<:[Property[_, _
 object EntityLoader {
 
   object FieldToProperty extends RecordT[Field, Property] {
-    def apply[N <: String, T](field: Field[N, T]): Property[N, T] = new Property[N, T](field.label)
+    def apply[N <: String, T](field: Field[N, T]): Property[N, T] = new Property[N, T]()(field.label)
   }
 
   def fromSeq[N <: String, Properties <: HList, Fields <: HList](

@@ -39,6 +39,7 @@ package graph {
       import c._
       import c.universe._
 
+      // TODO Edges support
       val Graph(vertices, _) = c.typeCheck(graph.tree).tpe
 
       path match {
@@ -61,18 +62,18 @@ package graph {
     final def apply[N <: String]()(implicit label: Label[N]) = new EdgeBuilder(label)
   }
 
-  class Property[N <: String, T](override val label: Label[N]) extends Record[N, T]
+  class Property[N <: String, T](override implicit val label: Label[N]) extends Record[N, T]
   object Property {
-    def boolean[N <: String]()(implicit label: Label[N]) = new Property[N, Boolean](label)
-    def byte[N <: String]()(implicit label: Label[N]) = new Property[N, Byte](label)
-    def bytes[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Byte]](label)
-    def char[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Char]](label)
-    def double[N <: String]()(implicit label: Label[N]) = new Property[N, Double](label)
-    def float[N <: String]()(implicit label: Label[N]) = new Property[N, Float](label)
-    def int[N <: String]()(implicit label: Label[N]) = new Property[N, Int](label)
-    def long[N <: String]()(implicit label: Label[N]) = new Property[N, Long](label)
-    def short[N <: String]()(implicit label: Label[N]) = new Property[N, Short](label)
-    def string[N <: String]()(implicit label: Label[N]) = new Property[N, String](label)
+    def boolean[N <: String]()(implicit label: Label[N]) = new Property[N, Boolean]
+    def byte[N <: String]()(implicit label: Label[N]) = new Property[N, Byte]
+    def bytes[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Byte]]
+    def char[N <: String]()(implicit label: Label[N]) = new Property[N, Array[Char]]
+    def double[N <: String]()(implicit label: Label[N]) = new Property[N, Double]
+    def float[N <: String]()(implicit label: Label[N]) = new Property[N, Float]
+    def int[N <: String]()(implicit label: Label[N]) = new Property[N, Int]
+    def long[N <: String]()(implicit label: Label[N]) = new Property[N, Long]
+    def short[N <: String]()(implicit label: Label[N]) = new Property[N, Short]
+    def string[N <: String]()(implicit label: Label[N]) = new Property[N, String]
   }
 
   class Vertex[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](
