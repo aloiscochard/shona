@@ -54,8 +54,8 @@ trait QueryMacro extends MacroHelper {
   import c._
   import c.universe._
 
-  def apply(query: c.Expr[String]): c.Expr[ast.Tree] = Query.fromTree(query.tree) match {
-    case Right(_) => reify(Parser(query.splice).right.get)
-    case Left(message) => abort(query.tree.pos, message)
+  def apply(query: c.Expr[String]): c.Expr[ast.Tree] = {
+    Query.fromTree(query.tree)
+    reify(Parser(query.splice).right.get)
   }
 }

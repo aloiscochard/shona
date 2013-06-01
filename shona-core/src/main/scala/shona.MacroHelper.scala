@@ -28,7 +28,10 @@ trait MacroHelper extends Macro {
 
   object Query {
     def fromTree(tree: Tree) = tree match {
-      case Literal(Constant(input: String)) => Parser(input)
+      case Literal(Constant(input: String)) => Parser(input) match {
+        case Right(query) => query
+        case Left(message) => abort(tree.pos, message)
+      }
       case query => abort(query.pos, "The query expression is not a string literal")
     }
   }
