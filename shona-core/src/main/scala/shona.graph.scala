@@ -25,7 +25,10 @@ package graph {
     def apply[VP <: Product, VL <: HList, EP <: Product, EL <: HList](vp: VP)(ep: EP)(implicit
       vhl: HListerAux[VP, VL], vlub: LUBConstraint[VL, Vertex[_, _]],
       ehl: HListerAux[EP, EL], elub: LUBConstraint[EL, Edge[_, _, _]]
-    ) = new Graph(vhl(vp), ehl(ep))
+    ): Graph[VL, EL] = apply(vhl(vp), ehl(ep))
+
+    def apply[VL <: HList : <<:[Vertex[_, _]]#λ, EL <: HList : <<:[Edge[_, _, _]]#λ](vl: VL, el: EL): Graph[VL, EL] = 
+      new Graph(vl, el)
 
     // TODO Investigate implicits based implementation (vs macro)
     def get[G <: Graph[_, _]](graph: G)(path: _) = macro GraphMacro.get[G]
