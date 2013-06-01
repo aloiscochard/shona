@@ -15,6 +15,14 @@ trait MacroHelper extends Macro {
   import c._
   import c.universe._
 
+  object Edge {
+    def unapply(tpe: Type) = {
+      val TypeRef(_, _, xs) = tpe
+      val name :: vertexFromName :: vertexFromProperties  :: mappingFromName :: _ :: vertexToName :: vertexToProperties :: mappingToName :: _ = xs
+      Some(name, HList.decons(vertexFromProperties).map(withLabel), mappingFromName, HList.decons(vertexToProperties).map(withLabel), mappingToName)
+    }
+  }
+
   object Entity {
     def unapply(tpe: Type) = {
       val TypeRef(_, _, List(fieldsHList)) = tpe
