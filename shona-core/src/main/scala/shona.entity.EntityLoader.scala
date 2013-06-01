@@ -13,43 +13,38 @@ import LUBConstraint._
 import graph._
 import record._
 
-abstract class EntityLoader[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](val vertex: Vertex[N, Properties]) {
+abstract class EntityLoader[N <: String, Properties <: HList : <<:[AnyProperty]#λ](vertex: Vertex[N, Properties]) {
   def all[PList <: HList, FList <: HList](properties: PList)(implicit 
-    lub: LUBConstraint[PList, Property[_, _]],
+    lub: LUBConstraint[PList, AnyProperty],
     rtr: RecordTRel[PList, Property, FList, Field],
     basis: BasisConstraint[PList, Properties],
-    tl: ToList[PList, Property[_, _]] 
+    tl: ToList[PList, AnyProperty] 
   ): Seq[Entity[FList]] 
 }
 
 object EntityLoader {
-
-  object FieldToProperty extends RecordT[Field, Property] {
-    def apply[N <: String, T](field: Field[N, T]): Property[N, T] = new Property[N, T]()(field.label)
-  }
-
-  def apply[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](
+  def apply[N <: String, Properties <: HList : <<:[AnyProperty]#λ](
     vertex: Vertex[N, Properties]
   )(implicit
-    entityLoader: EntityLoader[N, Properties]
-  ) = entityLoader
+    loader: EntityLoader[N, Properties]
+  ) = loader
 
   def fromSeq[N <: String, Properties <: HList, Fields <: HList](
     vertex: Vertex[N, Properties], 
     xs: Seq[Entity[Fields]]
   )(implicit 
-    propertiesLub: LUBConstraint[Properties, Property[_, _]],
+    propertiesLub: LUBConstraint[Properties, AnyProperty],
     propertiesRtr: RecordTRel[Properties, Property, Fields, Field],
     fieldsTl: ToList[Fields, Field[_ <: String, _]] 
   ): EntityLoader[N, Properties] = new EntityLoader(vertex) {
 
     override def all[PList <: HList, FList <: HList](properties: PList)(implicit 
-      plub: LUBConstraint[PList, Property[_, _]],
+      plub: LUBConstraint[PList, AnyProperty],
       rtr: RecordTRel[PList, Property, FList, Field],
       basis: BasisConstraint[PList, Properties],
-      tl: ToList[PList, Property[_, _]]
+      tl: ToList[PList, AnyProperty]
     ): Seq[Entity[FList]] = {
-      val propertiesList = properties.toList[Property[_, _]]
+      val propertiesList = properties.toList[AnyProperty]
       xs.map { x =>
         // TODO Investigate adding LUBConstraint[FList, Field[_, _]] and cast at HList level
         new Entity(
