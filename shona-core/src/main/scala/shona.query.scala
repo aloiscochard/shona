@@ -12,22 +12,18 @@ package query {
     import language.experimental.macros
     import scala.reflect.macros.{Context, Macro}
 
-    def apply(query: String) = macro applyImpl
-
-    def applyImpl(c: Context)(query: c.Expr[String]): c.Expr[ast.Tree] = {
-      import c._
-      import c.universe._
-
-      query.tree match {
-        case Literal(Constant(input: String)) => Parser(input) match {
-          case Right(_) => reify(Parser(query.splice).right.get)
-          case Left(message) => abort(query.tree.pos, message)
-        }
-        case query => abort(query.pos, "The query expression is not a string literal")
-      }
-    }
-
+    def apply(query: String) = macro QueryMacro.apply
     def parse(query: String): Either[String, ast.Tree] = Parser(query)
+  }
+
+  trait QueryMacro extends MacroHelper {
+    import c._
+    import c.universe._
+
+    def apply(query: c.Expr[String]): c.Expr[ast.Tree] = Query.fromTree(query.tree) match {
+      case Right(_) => reify(Parser(query.splice).right.get)
+      case Left(message) => abort(query.tree.pos, message)
+    }
   }
 
   package ast {
