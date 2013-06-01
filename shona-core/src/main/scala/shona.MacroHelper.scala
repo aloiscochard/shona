@@ -9,6 +9,8 @@ package shona
 import scala.reflect.macros.Macro
 import java.security.MessageDigest
 
+import shona.query.Parser
+
 trait MacroHelper extends Macro {
   import c._
   import c.universe._
@@ -21,6 +23,13 @@ trait MacroHelper extends Macro {
         label -> tpe
       }
       Some(fields)
+    }
+  }
+
+  object Query {
+    def fromTree(tree: Tree) = tree match {
+      case Literal(Constant(input: String)) => Parser(input)
+      case query => abort(query.pos, "The query expression is not a string literal")
     }
   }
 
