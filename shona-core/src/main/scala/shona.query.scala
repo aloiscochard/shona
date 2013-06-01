@@ -5,78 +5,55 @@
 // Licensed under the Apache License, Version 2.0
 
 package shona
+package query
 
-package query {
+import scala.util.parsing.combinator.RegexParsers
 
-  object Query {
-    import language.experimental.macros
-    import scala.reflect.macros.{Context, Macro}
+object Parser extends RegexParsers {
+  import ast._
 
-    def apply(query: String) = macro QueryMacro.apply
-    def parse(query: String): Either[String, ast.Tree] = Parser(query)
+  def apply(input: String): Either[String, Tree] = parseAll(expression, input) match {
+    case Success(tree, _) => Right(tree)
+    case NoSuccess(message, _) => Left(message)
   }
 
-  trait QueryMacro extends MacroHelper {
-    import c._
-    import c.universe._
+  def expression: Parser[Tree] = select | operations.map(_(Root))
 
-    def apply(query: c.Expr[String]): c.Expr[ast.Tree] = Query.fromTree(query.tree) match {
-      case Right(_) => reify(Parser(query.splice).right.get)
-      case Left(message) => abort(query.tree.pos, message)
-    }
+  def select: Parser[Tree] = (rep1sep(property, ".") ~ operations.?).map {
+    case (x :: xs) ~ operations => 
+      val tree = xs.foldLeft(Select(Root, x))(Select(_, _))
+      operations.fold[Tree](tree)(_(tree))
   }
 
-  package ast {
-    sealed trait Tree
-    case class Property(name: String) extends Tree
-    case class Select(qualifier: Tree, field: Property) extends Tree
-    case class Apply(tree: Tree, operation: Operation) extends Tree
+  def property: Parser[Property] = """\w+""".r.map(Property(_))
 
-    sealed trait Operation
-    case class MapOperation(mappings: Seq[Mapping]) extends Operation
+  def operations: Parser[Tree => Tree] = rep1(operation).map(xs => (xs: @unchecked) match {
+    case x :: xs => tree => xs.foldLeft(Apply(tree, x))(Apply(_, _)) 
+  })
 
-    sealed trait Mapping { def tree: Tree }
-    object Mapping {
-      case class Identity(tree: Tree) extends Mapping
-      case class Qualified(tree: Tree, name: String) extends Mapping
-    }
-  }
+  def operation: Parser[Operation] = "[" ~> ("=" ~> mappings).map(MapOperation(_)) <~ "]"
 
-  package object ast {
-    val Root = Property("@")
-  }
+  def mappings: Parser[Seq[Mapping]] = ("{" ~> rep1sep(mapping, ",") <~ "}") | mapping.map(_ :: Nil)
 
-  import scala.util.parsing.combinator.RegexParsers
+  def mapping: Parser[Mapping] = 
+    ("""\w+""".r ~ ":" ~ select).map { case name ~ ":" ~ property => Mapping.Qualified(property, name) } |
+    select.map(Mapping.Identity(_))
+}
 
-  object Parser extends RegexParsers {
-    import ast._
+object Query {
+  import language.experimental.macros
+  import scala.reflect.macros.{Context, Macro}
 
-    def apply(input: String): Either[String, Tree] = parseAll(expression, input) match {
-      case Success(tree, _) => Right(tree)
-      case NoSuccess(message, _) => Left(message)
-    }
+  def apply(query: String) = macro QueryMacro.apply
+  def parse(query: String): Either[String, ast.Tree] = Parser(query)
+}
 
-    def expression: Parser[Tree] = select | operations.map(_(Root))
+trait QueryMacro extends MacroHelper {
+  import c._
+  import c.universe._
 
-    def select: Parser[Tree] = (rep1sep(property, ".") ~ operations.?).map {
-      case (x :: xs) ~ operations => 
-        val tree = xs.foldLeft(Select(Root, x))(Select(_, _))
-        operations.fold[Tree](tree)(_(tree))
-    }
-
-    def property: Parser[Property] = """\w+""".r.map(Property(_))
-
-    def operations: Parser[Tree => Tree] = rep1(operation).map(xs => (xs: @unchecked) match {
-      case x :: xs => tree => xs.foldLeft(Apply(tree, x))(Apply(_, _)) 
-    })
-
-    def operation: Parser[Operation] = "[" ~> ("=" ~> mappings).map(MapOperation(_)) <~ "]"
-
-    def mappings: Parser[Seq[Mapping]] = ("{" ~> rep1sep(mapping, ",") <~ "}") | mapping.map(_ :: Nil)
-
-    def mapping: Parser[Mapping] = 
-      ("""\w+""".r ~ ":" ~ select).map { case name ~ ":" ~ property => Mapping.Qualified(property, name) } |
-      select.map(Mapping.Identity(_))
-
+  def apply(query: c.Expr[String]): c.Expr[ast.Tree] = Query.fromTree(query.tree) match {
+    case Right(_) => reify(Parser(query.splice).right.get)
+    case Left(message) => abort(query.tree.pos, message)
   }
 }
