@@ -9,33 +9,33 @@ package shona
 import language.experimental.macros
 import scala.reflect.macros.{Context, Macro}
 
-import shapeless.{HList, HListerAux, HNil, LUBConstraint}
+import shapeless.{BasisConstraint, HList, HListerAux, HNil, LUBConstraint}
 import shapeless.LUBConstraint._
 
 import record._
 
 package graph {
 
-  class Graph[Vertices <: HList : <<:[Vertex[_, _]]#λ, Edges <: HList : <<:[Edge[_, _, _]]#λ](
+  class Graph[Vertices <: HList : <<:[AnyVertex]#λ, Edges <: HList : <<:[AnyEdge]#λ](
     val vertices: Vertices,
     val edges: Edges
   ) 
 
   object Graph {
     def apply[VP <: Product, VL <: HList, EP <: Product, EL <: HList](vp: VP)(ep: EP)(implicit
-      vhl: HListerAux[VP, VL], vlub: LUBConstraint[VL, Vertex[_, _]],
-      ehl: HListerAux[EP, EL], elub: LUBConstraint[EL, Edge[_, _, _]]
+      vhl: HListerAux[VP, VL], vlub: LUBConstraint[VL, AnyVertex],
+      ehl: HListerAux[EP, EL], elub: LUBConstraint[EL, AnyEdge]
     ): Graph[VL, EL] = apply(vhl(vp), ehl(ep))
 
-    def apply[VL <: HList : <<:[Vertex[_, _]]#λ, EL <: HList : <<:[Edge[_, _, _]]#λ](vl: VL, el: EL): Graph[VL, EL] = 
+    def apply[VL <: HList : <<:[AnyVertex]#λ, EL <: HList : <<:[AnyEdge]#λ](vl: VL, el: EL): Graph[VL, EL] = 
       new Graph(vl, el)
 
     // TODO Investigate implicits based implementation (vs macro)
-    def get[G <: Graph[_, _]](graph: G)(path: _) = macro GraphMacro.get[G]
+    def get[G <: AnyGraph](graph: G)(path: _) = macro GraphMacro.get[G]
   }
 
   trait GraphMacro extends Macro with MacroHelper {
-    def get[G <: Graph[_, _] : c.WeakTypeTag](graph: c.Expr[G])(path: c.Tree): c.Tree = {
+    def get[G <: AnyGraph : c.WeakTypeTag](graph: c.Expr[G])(path: c.Tree): c.Tree = {
       import c._
       import c.universe._
 
@@ -53,13 +53,43 @@ package graph {
     }
   }
 
-  class Edge[N <: String, V1 <: Vertex[_, _], V2 <: Vertex[_, _]](name: Label[N], v1: V1, v2: V2)
+  class Edge[
+    N <: String, 
+    VFN <: String, VFPL <: HList : <<:[AnyProperty]#λ, PFN <: String, PFT,
+    VTN <: String, VTPL <: HList : <<:[AnyProperty]#λ, PTN <: String, PTT
+  ](
+    name: Label[N],
+    from: Vertex[VFN, VFPL], 
+    to: Vertex[VTN, VTPL],
+    mapping: Mapping[PFN, PFT, PTN, PTT]
+  )(implicit
+    fromBasis: BasisConstraint[shapeless.::[Property[PFN, PFT], HNil], VFPL],
+    toBasis: BasisConstraint[shapeless.::[Property[PTN, PTT], HNil], VTPL]
+  )
 
   object Edge {
     class EdgeBuilder[N <: String](label: Label[N]) { 
-      def ~[V1 <: Vertex[_, _], V2 <: Vertex[_, _]](v1: V1, v2: V2) = new Edge(label, v1, v2)
+      def ~[
+        VFN <: String, VFPL <: HList : <<:[AnyProperty]#λ, PFN <: String, PFT,
+        VTN <: String, VTPL <: HList : <<:[AnyProperty]#λ, PTN <: String, PTT
+      ](
+        from: Vertex[VFN, VFPL], 
+        to: Vertex[VTN, VTPL],
+        mapping: Mapping[PFN, PFT, PTN, PTT]
+      )(implicit
+        fromBasis: BasisConstraint[shapeless.::[Property[PFN, PFT], HNil], VFPL],
+        toBasis: BasisConstraint[shapeless.::[Property[PTN, PTT], HNil], VTPL]
+      ) = new Edge(label, from, to, mapping)
     }
     final def apply[N <: String]()(implicit label: Label[N]) = new EdgeBuilder(label)
+  }
+
+  class Mapping[FN <: String, FT, TN <: String, TT](from: Property[FN, FT], to: Property[TN, TT], map: FT => TT)
+
+  object Mapping {
+    def apply[FN <: String, FT, TN <: String, TT](from: Property[FN, FT], to: Property[TN, TT])(map: FT => TT) = 
+      new Mapping(from, to, map)
+    def identity[FN <: String, TN <: String, T](from: Property[FN, T], to: Property[TN, T]) = new Mapping(from, to, Predef.identity[T])
   }
 
   class Property[N <: String, T](override implicit val label: Label[N]) extends Record[N, T]
@@ -76,7 +106,7 @@ package graph {
     def string[N <: String]()(implicit label: Label[N]) = new Property[N, String]
   }
 
-  class Vertex[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](
+  class Vertex[N <: String, Properties <: HList : <<:[AnyProperty]#λ](
     val name: Label[N], 
     val properties: Properties
   )
@@ -89,4 +119,11 @@ package graph {
     }
     final def apply[N <: String]()(implicit label: Label[N]) = new VertexBuilder(label)
   }
+}
+
+package object graph {
+  type AnyEdge = Edge[_, _, _, _, _, _, _, _, _]
+  type AnyGraph = Graph[_, _]
+  type AnyProperty = Property[_, _]
+  type AnyVertex = Vertex[_, _]
 }

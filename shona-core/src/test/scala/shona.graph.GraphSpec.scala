@@ -33,8 +33,8 @@ class GraphSpec extends Specification {
   )
 
   val graph = Graph(venueV, addressV, reviewV)(
-    Edge[label("address")] ~ (venueV, addressV), 
-    Edge[label("review")] ~ (venueV, reviewV)
+    Edge[label("address")] ~ (venueV, addressV, Mapping.identity(int[label("id")], int[label("venueId")])), 
+    Edge[label("review")] ~ (venueV, reviewV, Mapping(int[label("id")], string[label("venueId")])("venue" + _.toString))
   )
 
   "Shona Graph" should {
