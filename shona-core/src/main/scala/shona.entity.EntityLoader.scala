@@ -28,6 +28,12 @@ object EntityLoader {
     def apply[N <: String, T](field: Field[N, T]): Property[N, T] = new Property[N, T]()(field.label)
   }
 
+  def apply[N <: String, Properties <: HList : <<:[Property[_, _]]#λ](
+    vertex: Vertex[N, Properties]
+  )(implicit
+    entityLoader: EntityLoader[N, Properties]
+  ) = entityLoader
+
   def fromSeq[N <: String, Properties <: HList, Fields <: HList](
     vertex: Vertex[N, Properties], 
     xs: Seq[Entity[Fields]]
