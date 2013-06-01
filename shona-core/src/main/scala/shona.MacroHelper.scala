@@ -65,6 +65,13 @@ trait MacroHelper extends Macro {
     }
   }
 
+  object Vertex {
+    def unapply(tpe: Type) = {
+      val TypeRef(_, _, _ :: propertiesHList :: _) = tpe
+      Some(HList.decons(propertiesHList).map(withLabel))
+    }
+  }
+
   private lazy val messageDigest = MessageDigest.getInstance("MD5")
 
   def digest(x: String): String = messageDigest.digest(x.getBytes).map("%02X".format(_)).mkString
