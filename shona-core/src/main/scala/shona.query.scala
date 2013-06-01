@@ -9,9 +9,9 @@ package query
 
 import scala.util.parsing.combinator.RegexParsers
 
-object Parser extends RegexParsers {
-  import ast._
+import ast._
 
+class Parser extends RegexParsers {
   def apply(input: String): Either[String, Tree] = parseAll(expression, input) match {
     case Success(tree, _) => Right(tree)
     case NoSuccess(message, _) => Left(message)
@@ -39,6 +39,8 @@ object Parser extends RegexParsers {
     ("""\w+""".r ~ ":" ~ select).map { case name ~ ":" ~ property => Mapping.Qualified(property, name) } |
     select.map(Mapping.Identity(_))
 }
+
+object Parser { def apply(input: String): Either[String, Tree] = (new Parser).apply(input) }
 
 object Query {
   import language.experimental.macros
