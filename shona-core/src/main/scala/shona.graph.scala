@@ -43,11 +43,10 @@ package graph {
       val Graph(vertices, _) = c.typeCheck(graph.tree).tpe
 
       path match {
-        case Ident(TermName(vertexLabel)) =>
-          vertices.map({ case (label, _) => label }).zipWithIndex.find({ case (label, _ ) => label == vertexLabel }) match {
-            case Some((_, index)) => HList.select(index)(q"${graph.tree}.vertices")
-            case None => c.abort(path.pos, s"Vertex '$vertexLabel' not found")
-          }
+        case Ident(TermName(vertexLabel)) => indexOf(vertices, vertexLabel) match {
+          case Some((index, _)) => HList.select(index)(q"${graph.tree}.vertices")
+          case None => c.abort(path.pos, s"Vertex '$vertexLabel' not found")
+        }
         case _ => c.abort(path.pos, "Invalid path expression (only vertex label are currently supported)")
       }
     }
@@ -58,10 +57,10 @@ package graph {
     VFN <: String, VFPL <: HList : <<:[AnyProperty]#λ, PFN <: String, PFT,
     VTN <: String, VTPL <: HList : <<:[AnyProperty]#λ, PTN <: String, PTT
   ](
-    name: Label[N],
-    from: Vertex[VFN, VFPL], 
-    to: Vertex[VTN, VTPL],
-    mapping: Mapping[PFN, PFT, PTN, PTT]
+    val name: Label[N],
+    val from: Vertex[VFN, VFPL], 
+    val to: Vertex[VTN, VTPL],
+    val mapping: Mapping[PFN, PFT, PTN, PTT]
   )(implicit
     fromBasis: BasisConstraint[shapeless.::[Property[PFN, PFT], HNil], VFPL],
     toBasis: BasisConstraint[shapeless.::[Property[PTN, PTT], HNil], VTPL]
@@ -84,7 +83,7 @@ package graph {
     final def apply[N <: String]()(implicit label: Label[N]) = new EdgeBuilder(label)
   }
 
-  class Mapping[FN <: String, FT, TN <: String, TT](from: Property[FN, FT], to: Property[TN, TT], map: FT => TT)
+  class Mapping[FN <: String, FT, TN <: String, TT](val from: Property[FN, FT], val to: Property[TN, TT], val map: FT => TT)
 
   object Mapping {
     def apply[FN <: String, FT, TN <: String, TT](from: Property[FN, FT], to: Property[TN, TT])(map: FT => TT) = 

@@ -26,16 +26,6 @@ trait MacroHelper extends Macro {
     }
   }
 
-  object Query {
-    def fromTree(tree: Tree) = tree match {
-      case Literal(Constant(input: String)) => Parser(input) match {
-        case Right(query) => query
-        case Left(message) => abort(tree.pos, message)
-      }
-      case query => abort(query.pos, "The query expression is not a string literal")
-    }
-  }
-
   object Graph {
     def unapply(tpe: Type) = {
       val TypeRef(_, _, xs) = tpe
@@ -65,6 +55,16 @@ trait MacroHelper extends Macro {
     }
   }
 
+  object Query {
+    def fromTree(tree: Tree) = tree match {
+      case Literal(Constant(input: String)) => Parser(input) match {
+        case Right(query) => query
+        case Left(message) => abort(tree.pos, message)
+      }
+      case query => abort(query.pos, "The query expression is not a string literal")
+    }
+  }
+
   object Vertex {
     def unapply(tpe: Type) = {
       val TypeRef(_, _, _ :: propertiesHList :: _) = tpe
@@ -79,6 +79,10 @@ trait MacroHelper extends Macro {
   def enrich(tree: Tree, generatedCode: List[c.Tree]) = {
     val ClassDef(a, b, c, Template(parents, valDef, existingCode)) = tree
     ClassDef(a, b, c, Template(parents, valDef, existingCode ++ generatedCode))
+  }
+
+  def indexOf(xs: Seq[(String, Type)], name: String) = xs.zipWithIndex.collectFirst {
+    case ((label, tpe), index) if label == name => index -> tpe
   }
 
   def withLabel(tpe: Type) = {
