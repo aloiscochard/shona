@@ -114,7 +114,7 @@ package graph {
   object Vertex {
     class VertexBuilder[N <: String](label: Label[N]) { 
       //def ~[PN <: String, T](property: Property[PN, T]) = new Vertex(label, property :: HNil)
-      def ~[P <: Product, L <: HList](p: P)(implicit hl: HListerAux[P, L], lub: LUBConstraint[L, Property[_, _]]): Vertex[N, L] = 
+      def ~[P <: Product, L <: HList](p: P)(implicit hl: HListerAux[P, L], lub: LUBConstraint[L, AnyProperty]): Vertex[N, L] = 
         new Vertex(label, hl(p))
     }
     final def apply[N <: String]()(implicit label: Label[N]) = new VertexBuilder(label)
